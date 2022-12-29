@@ -216,4 +216,5 @@ print(efficientOpt(meanReturns, covMatrix, 0.05))
 print(calculatedResults(meanReturns, covMatrix))
 '''
 
+
 EF_graph(meanReturns,covMatrix)
