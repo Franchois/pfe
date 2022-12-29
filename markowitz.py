@@ -192,7 +192,7 @@ def EF_graph(meanReturns, covMatrix, riskFreeRate=0, constraintSet=(0,1)):
 stockList = ['TTE', 'BNP.PA', 'GLE.PA']
 endDate = dt.datetime.now()
 startDate = endDate - dt.timedelta(days=300)
-test = yf.download(['^FCHI', '^GDAXI'], startDate, endDate)
+yf.download(['^FCHI', '^GDAXI'], startDate, endDate)
 meanReturns, covMatrix = get_data(stockList, startDate, endDate)
 
 '''
