@@ -56,7 +56,6 @@ def maxSR(meanReturns, covMatrix, riskFreeRate=0, constraintSet =(0,1)):
     constraints = ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1})
     bound = constraintSet
     bounds = tuple(bound for asset in range(numAssets))
-    # w0 = numAssets*[1./numAssets]
     # La fonction minimize, minimise la fonction par rapport à son premier argument
     result = sc.minimize(negativeSR, numAssets*[1./numAssets], args=args,
                         method='SLSQP', bounds=bounds, constraints=constraints)
@@ -189,10 +188,10 @@ def EF_graph(meanReturns, covMatrix, riskFreeRate=0, constraintSet=(0,1)):
 ################################################ TEST ################################################
 ######################################################################################################
 
-stockList = ['TTE', 'BNP.PA', 'GLE.PA']
-endDate = dt.datetime.now()
-startDate = endDate - dt.timedelta(days=300)
-yf.download(['^FCHI', '^GDAXI'], startDate, endDate)
+
+stockList = ['^GDAXI', '^FCHI', '^IBEX', '^AEX', '^BFX']
+endDate = dt.date(2018, 12, 31)
+startDate = endDate - dt.timedelta(days=252)
 meanReturns, covMatrix = get_data(stockList, startDate, endDate)
 
 '''
@@ -215,6 +214,25 @@ print(efficientOpt(meanReturns, covMatrix, 0.05))
 
 print(calculatedResults(meanReturns, covMatrix))
 '''
+
+minVarresult = minimizeVariance(meanReturns, covMatrix)
+EF_graph(meanReturns,covMatrix)
+
+stock='AAPL'
+stock_yfin=yf.Ticker("{}".format(stock))
+stock_yfin.earnings
+
+
+########## Test de l'approche_1
+
+IndexList=['^GDAXI', '^FCHI', '^IBEX', '^AEX', '^BFX']
+endDate = dt.date(2018, 12, 31)
+startDate = endDate - dt.timedelta(days=252)
+
+meanReturns, covMatrix = get_data(IndexList, startDate, endDate)
+
+result = minimizeVariance(meanReturns, covMatrix, constraintSet=(0,1))
+weights_intensity = result["x"]
 
 
 EF_graph(meanReturns,covMatrix)
