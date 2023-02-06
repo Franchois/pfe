@@ -72,64 +72,24 @@ def GraphIC(meanReturns, covMatrix, Countries, benchmark):
     plt.show()
     
     
+
+Data = pd.read_csv("Data_Carbon_Intensity.csv", sep=",", encoding="utf-8")
+
+
+def dynamique(start,end,list_stock,h) :
     
-
-######################
-### TEST #####
-######################
-'''
-Allemagne, France, Royaume Unis, Espagne, Pays Bas, Grece, Suede, Belgique, Danemark
-DAX, CAC40, FTSE100, IBEX35, AEX, Athens General Composite, OMXS30, BEL20, OMXC20
-'''
-
-IndexList=['^GDAXI', '^FCHI', '^IBEX', '^AEX', '^BFX']
-endDate = dt.date(2018, 12, 31)
-startDate = endDate - dt.timedelta(days=252)
-
-meanReturns, covMatrix = get_data(IndexList, startDate, endDate)
-
-result = minimizeVariance(meanReturns, covMatrix, ['Germany', 'France', 'Spain', 'Netherlands','Belgium'], intensityTarget=100000, constraintSet=(0,1))
-weights_intensity = result["x"]
-
-retour, std = portfolioPerformance(weights_intensity, meanReturns, covMatrix)
-
-each_intensite_carbon, tot_intensite_carbon = get_intensity_carbon(result["x"], ['Germany', 'France', 'Spain', 'Netherlands','Belgium'])
-
-print(each_intensite_carbon)
-print(tot_intensite_carbon)
-
-#########
-
-result_after = minimizeVariance(meanReturns, covMatrix, ['Germany', 'France', 'Spain', 'Netherlands','Belgium'], benchmark = weights_intensity, intensityTarget=1.7e-10, constraintSet=(0,1))
-
-retour_after, std_after = portfolioPerformance(result_after['x'], meanReturns, covMatrix)
-
-each_intensite_carbon_after, tot_intensite_carbon_after = get_intensity_carbon(result_after["x"], ['Germany', 'France', 'Spain', 'Netherlands','Belgium'])
-
-print(retour_after, std_after)
-print(each_intensite_carbon_after)
-print(tot_intensite_carbon_after)
-
-####
-
-GraphIC(meanReturns, covMatrix, ['Germany', 'France', 'Spain', 'Netherlands','Belgium'], benchmark=weights_intensity)
-
-
-'''
-
-[0.48894644 0.22011436 0.         0.         0.29093919]
-
-retour
--0.21480983519048688
-
-std
-0.12406074733910856
-
-Intensite_carbon = 1.8184936856868873e-10
------------------------------
-
-Sans prendre en compte le risque carbonne :
-
-La volatilité  
-'''
-
+    n=(end-start)/h
+    date_1 = start
+    allocation=[]
+    for i in range(0,h):
+        date_1=start+i*n
+        date_2 = date_1 + (i+1)*n
+        data=get_data(list_stock,date_1, date_2)
+        meansReturn=data.mean()
+        cov=data.cov()
+        weights=minimizeVariance(meanReturns,cov)
+        allocation.append(weights)
+    return  allocation
+        
+        
+    
