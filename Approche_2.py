@@ -100,6 +100,10 @@ def minimizeVariance(meanReturns, covMatrix, date, intensityTarget, benchmark=Fa
     return result
 
 def minimizeVariance_year(intensityTarget):
+    '''
+    Cette fonction permet de nous donner pour chaque date l'allocation optimale
+    '''
+    
     Allocation_by_month={}
     for t in range (0, 20):
         '''
@@ -196,3 +200,66 @@ def GraphPerformance(date):
     fig = go.Figure(data=data, layout=layout)
     return fig.show()
     
+    
+## Etape 2 : Construction de la frontière efficiente
+
+## Idée 1 : On va supposer que l'investisseur ne veuille pas dépasser un certain seuil d'intensité carbone.
+## Alors pour un retour donnée on cherche à minimiser la variance sous une contrainte sur l'intensité carbone du
+## portefeuille.
+
+def portfolioReturn(weights, meanReturns, covMatrix):
+        return portfolioPerformance(weights, meanReturns, covMatrix)[0]
+
+
+def frontiere_efficiente (date, intensityTarget, constraintSet=(0,1)):
+    '''
+    On va faire varier la valeur d'un return et trouver le portefeuille optimal pour ce retour donné.
+    Il faut donc voir de où à où nous faisons varier notre portefeuille. Une idée naïve consiste à prendre
+    le plus petit rendement possible, et le plus grand possible en allouant tout le portefeuille sur un seul actif.
+    '''
+    Cov_Matrix=get_cov(date).to_numpy()
+    Back = get_return(date).to_numpy()
+    W = np.identity(11)
+    borne_inf = min([portfolioPerformance(W[i], Back, Cov_Matrix)[0] for i in range(11)])
+    borne_sup = max([portfolioPerformance(W[i], Back, Cov_Matrix)[0] for i in range(11)])
+    returnTarget = np.linspace(borne_inf, borne_sup, 100)
+    X_efficient = []
+    for target in returnTarget:
+        numAssets = np.shape(Back)[1]
+        args = (Back, Cov_Matrix)
+        constraints = ({'type':'eq', 'fun': lambda x: portfolioReturn(x, Back, Cov_Matrix) - target},
+                    {'type': 'eq', 'fun': lambda x: np.sum(x) - 1},
+                    {'type': 'ineq', 'fun' : lambda x: intensityTarget - Total_Intensity_Carbon(x, date)})
+        bound = constraintSet
+        bounds = tuple(bound for asset in range(numAssets))
+        effOpt = sc.minimize(portfolioVariance, numAssets*[1./numAssets], args=args, method = 'SLSQP', bounds=bounds, constraints=constraints)
+        X_efficient.append(effOpt['fun']) # ['fun'] permet de recuperer directement la variance associé à l'allocation optimale
+    return X_efficient, returnTarget
+
+def GraphEfficient(date, intensityTarget):
+    X_efficient = frontiere_efficiente (date, intensityTarget)[0]
+    returnTarget = frontiere_efficiente (date, intensityTarget)[1]
+    #Efficient Frontier
+    EF_curve = go.Scatter(
+        name='Efficient Frontier',
+        mode='lines',
+        x=[round(ef_std, 2) for ef_std in X_efficient],
+        y=[round(target, 2) for target in returnTarget],
+        line=dict(color='black', width=4, dash='dashdot')
+    )
+    
+    data = [EF_curve]
+    layout = go.Layout(
+        title = 'Portfolio Optimisation with the Efficient Frontier',
+        yaxis = dict(title='Return (%)'),
+        xaxis = dict(title='Volatility (%)'),
+        showlegend = True,
+        legend = dict(
+            x = 0.75, y = 0, traceorder='normal',
+            bgcolor='#E2E2E2',
+            bordercolor='black',
+            borderwidth=2),
+        width=800,
+        height=600)
+    fig = go.Figure(data=data, layout=layout)
+    return fig.show()
