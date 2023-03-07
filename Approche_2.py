@@ -53,7 +53,7 @@ Liste_Actif=['Asia Local Bond USD Unhedged',
 #####################################
 
 def portfolioPerformance(weights, meanReturns, covMatrix):
-    returns = np.sum(meanReturns*weights)
+    returns = np.sum(meanReturns*weights) 
     std = np.sqrt(np.dot(weights.T, np.dot(covMatrix, weights)))
     return returns, std
 
@@ -223,8 +223,9 @@ def frontiere_efficiente (date, intensityTarget, constraintSet=(0,1)):
     W = np.identity(11)
     borne_inf = min([portfolioPerformance(W[i], Back, Cov_Matrix)[0] for i in range(11)])
     borne_sup = max([portfolioPerformance(W[i], Back, Cov_Matrix)[0] for i in range(11)])
-    returnTarget = np.linspace(borne_inf, borne_sup, 200)
+    returnTarget = np.linspace(borne_inf, borne_sup, 50)
     X_efficient = []
+    IC_efficient = []
     for target in returnTarget:
         numAssets = np.shape(Back)[1]
         args = (Back, Cov_Matrix)
@@ -235,18 +236,22 @@ def frontiere_efficiente (date, intensityTarget, constraintSet=(0,1)):
         bounds = tuple(bound for asset in range(numAssets))
         effOpt = sc.minimize(portfolioVariance, numAssets*[1./numAssets], args=args, method = 'SLSQP', bounds=bounds, constraints=constraints)
         X_efficient.append(effOpt['fun']) # ['fun'] permet de recuperer directement la variance associé à l'allocation optimale
-    return X_efficient, returnTarget
+        IC_efficient.append(Total_Intensity_Carbon(effOpt['x'], date))
+    return X_efficient, returnTarget, IC_efficient
 
 def GraphEfficient(date, intensityTarget):
     X_efficient = frontiere_efficiente (date, intensityTarget)[0]
     returnTarget = frontiere_efficiente (date, intensityTarget)[1]
+    IC_efficient = frontiere_efficiente(date, intensityTarget)[2]
     #Efficient Frontier
     EF_curve = go.Scatter(
         name='Efficient Frontier',
-        mode='lines',
+        mode='markers',
         x=[round(ef_std, 2) for ef_std in X_efficient],
         y=[round(target, 2) for target in returnTarget],
-        line=dict(color='black', width=4, dash='dashdot')
+        text = IC_efficient,
+        marker=dict(color='royalblue', size=8),
+        hovertemplate="""Intensité Carbone: %{text} <extra></extra>""",
     )
     
     data = [EF_curve]
