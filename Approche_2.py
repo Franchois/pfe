@@ -51,17 +51,18 @@ Liste_Actif=['Asia Local Bond USD Unhedged',
 #####################################
 ########### Préliminaire ############
 #####################################
+
 def portfolioPerformance(weights, meanReturns, covMatrix):
-    returns = np.sum(meanReturns*weights)*252
-    std = np.sqrt(np.dot(weights.T, np.dot(covMatrix, weights))) * np.sqrt(252)
+    returns = np.sum(meanReturns*weights)
+    std = np.sqrt(np.dot(weights.T, np.dot(covMatrix, weights)))
     return returns, std
 
 def Total_Intensity_Carbon(weights,date):
     '''
-    Renvoit l'intensity carbonne totale du portefeuillen c'est à dire la somme ponderé par les poids des intensités
+    Renvoit l'intensity carbonne totale du portefeuille c'est à dire la somme ponderé par les poids des intensités
     carbone de chaque actifs
     '''
-    Intensity_Carbon =carbon_int[Liste_Actif].loc[carbon_int["Date"]==date]
+    Intensity_Carbon = carbon_int[Liste_Actif].loc[carbon_int["Date"]==date]
     Int_carb_matrix=Intensity_Carbon.to_numpy()
     Intensity_Carbon_Portfolio = np.sum(Int_carb_matrix*weights)
     return Intensity_Carbon_Portfolio
@@ -98,6 +99,7 @@ def minimizeVariance(meanReturns, covMatrix, date, intensityTarget, benchmark=Fa
     result = sc.minimize(portfolioVariance, numAssets*[1./numAssets], args=args,
                         method='SLSQP', bounds=bounds, constraints=constraints)
     return result
+
 
 def minimizeVariance_year(intensityTarget):
     '''
@@ -151,12 +153,11 @@ def Performance_by_date(intensityTarget):
     return Tot_Carbon_Intensity, Retours, Volatilite
         
 def GraphPerformance(date):
-    x_axis=np.linspace(200,600,100)
+    x_axis=np.linspace(200,600,50)
     Y_intens_carbon=[]
     Y_retour=[]
     Y_vol=[]
     for intensityTarget in x_axis:
-        print(intensityTarget)
         Performance = Performance_by_date(intensityTarget)
         Y_intens_carbon.append(Performance[0][date])
         Y_retour.append(Performance[1][date])
@@ -222,7 +223,7 @@ def frontiere_efficiente (date, intensityTarget, constraintSet=(0,1)):
     W = np.identity(11)
     borne_inf = min([portfolioPerformance(W[i], Back, Cov_Matrix)[0] for i in range(11)])
     borne_sup = max([portfolioPerformance(W[i], Back, Cov_Matrix)[0] for i in range(11)])
-    returnTarget = np.linspace(borne_inf, borne_sup, 100)
+    returnTarget = np.linspace(borne_inf, borne_sup, 200)
     X_efficient = []
     for target in returnTarget:
         numAssets = np.shape(Back)[1]
@@ -263,3 +264,9 @@ def GraphEfficient(date, intensityTarget):
         height=600)
     fig = go.Figure(data=data, layout=layout)
     return fig.show()
+
+
+#################
+## BackTesting ##
+#################
+
